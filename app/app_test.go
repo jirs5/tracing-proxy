@@ -26,7 +26,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"gopkg.in/alexcesaro/statsd.v2"
 
-	"github.com/honeycombio/libhoney-go"
 	"github.com/honeycombio/libhoney-go/transmission"
 	"github.com/jirs5/tracing-proxy/collect"
 	"github.com/jirs5/tracing-proxy/config"
@@ -115,7 +114,7 @@ func newStartedApp(
 		GetListenAddrVal:                     "127.0.0.1:" + strconv.Itoa(basePort),
 		GetPeerListenAddrVal:                 "127.0.0.1:" + strconv.Itoa(basePort+1),
 		GetAPIKeysVal:                        []string{"KEY"},
-		GetHoneycombAPIVal:                   "http://jirs5",
+		GetOpsRampAPIVal:                     "http://jirs5",
 		GetInMemoryCollectorCacheCapacityVal: config.InMemoryCollectorCacheCapacity{CacheCapacity: 10000},
 		AddHostMetadataToTrace:               enableHostMetadata,
 	}
@@ -228,7 +227,7 @@ func TestAppIntegration(t *testing.T) {
 		"http://localhost:10000/1/batch/dataset",
 		strings.NewReader(`[{"data":{"trace.trace_id":"1","foo":"bar"}}]`),
 	)
-	req.Header.Set("X-Honeycomb-Team", "KEY")
+	req.Header.Set("X-OpsRamp-Team", "KEY")
 	req.Header.Set("Content-Type", "application/json")
 
 	resp, err := http.DefaultTransport.RoundTrip(req)
@@ -285,7 +284,7 @@ func TestPeerRouting(t *testing.T) {
 		nil,
 	)
 	assert.NoError(t, err)
-	req.Header.Set("X-Honeycomb-Team", "KEY")
+	req.Header.Set("X-OpsRamp-Team", "KEY")
 	req.Header.Set("Content-Type", "application/json")
 
 	blob := `[` + string(spans[0]) + `]`
@@ -331,7 +330,7 @@ func TestPeerRouting(t *testing.T) {
 		nil,
 	)
 	assert.NoError(t, err)
-	req.Header.Set("X-Honeycomb-Team", "KEY")
+	req.Header.Set("X-OpsRamp-Team", "KEY")
 	req.Header.Set("Content-Type", "application/json")
 
 	req.Body = ioutil.NopCloser(strings.NewReader(blob))
@@ -355,7 +354,7 @@ func TestHostMetadataSpanAdditions(t *testing.T) {
 		"http://localhost:14000/1/batch/dataset",
 		strings.NewReader(`[{"data":{"foo":"bar","trace.trace_id":"1"}}]`),
 	)
-	req.Header.Set("X-Honeycomb-Team", "KEY")
+	req.Header.Set("X-OpsRamp-Team", "KEY")
 	req.Header.Set("Content-Type", "application/json")
 
 	resp, err := http.DefaultTransport.RoundTrip(req)
@@ -416,11 +415,11 @@ func TestEventsEndpoint(t *testing.T) {
 		bytes.NewReader(blob),
 	)
 	assert.NoError(t, err)
-	req.Header.Set("X-Honeycomb-Team", "KEY")
+	req.Header.Set("X-OpsRamp-Team", "KEY")
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Content-Encoding", "zstd")
-	req.Header.Set("X-Honeycomb-Event-Time", now.Format(time.RFC3339Nano))
-	req.Header.Set("X-Honeycomb-Samplerate", "10")
+	req.Header.Set("X-OpsRamp-Event-Time", now.Format(time.RFC3339Nano))
+	req.Header.Set("X-OpsRamp-Samplerate", "10")
 
 	post(t, req)
 	assert.Eventually(t, func() bool {
@@ -458,11 +457,11 @@ func TestEventsEndpoint(t *testing.T) {
 		buf,
 	)
 	assert.NoError(t, err)
-	req.Header.Set("X-Honeycomb-Team", "KEY")
+	req.Header.Set("X-OpsRamp-Team", "KEY")
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Content-Encoding", "gzip")
-	req.Header.Set("X-Honeycomb-Event-Time", now.Format(time.RFC3339Nano))
-	req.Header.Set("X-Honeycomb-Samplerate", "10")
+	req.Header.Set("X-OpsRamp-Event-Time", now.Format(time.RFC3339Nano))
+	req.Header.Set("X-OpsRamp-Samplerate", "10")
 
 	post(t, req)
 	assert.Eventually(t, func() bool {
@@ -554,7 +553,7 @@ func BenchmarkTraces(b *testing.B) {
 		nil,
 	)
 	assert.NoError(b, err)
-	req.Header.Set("X-Honeycomb-Team", "KEY")
+	req.Header.Set("X-OpsRamp-Team", "KEY")
 	req.Header.Set("Content-Type", "application/json")
 
 	b.Run("single", func(b *testing.B) {
@@ -657,7 +656,7 @@ func BenchmarkDistributedTraces(b *testing.B) {
 		nil,
 	)
 	assert.NoError(b, err)
-	req.Header.Set("X-Honeycomb-Team", "KEY")
+	req.Header.Set("X-OpsRamp-Team", "KEY")
 	req.Header.Set("Content-Type", "application/json")
 
 	b.Run("single", func(b *testing.B) {

@@ -47,23 +47,29 @@ data:
     # utilization over data transfer costs.
     CompressPeerCommunication = true
 
-    # APIKeys is a list of Honeycomb API keys that the proxy will accept. This list
-    # only applies to events - other Honeycomb API actions will fall through to the
+    # APIKeys is a list of OpsRamp API keys that the proxy will accept. This list
+    # only applies to events - other OpsRamp API actions will fall through to the
     # upstream API directly.
     # Adding keys here causes events arriving with API keys not in this list to be
     # rejected with an HTTP 401 error If an API key that is a literal '*' is in the
     # list, all API keys are accepted.
     # Eligible for live reload.
     APIKeys = [
-      # "replace-me",
-      # "more-optional-keys",
-      "*",                   # wildcard accept all keys
-      ]
+        # "replace-me",
+        # "more-optional-keys",
+        "*", # wildcard accept all keys
+    ]
 
-    # HoneycombAPI is the URL for the upstream Honeycomb API.
+    # OpsRampAPI is the URL for the upstream OpsRamp API.
     # Eligible for live reload.
-    #HoneycombAPI = "localhost:50052"
-    HoneycombAPI = "https://asura.opsramp.net"
+    #OpsRampAPI = "localhost:50052"
+    OpsRampAPI = "https://asura.opsramp.net"
+
+
+    #Tls Options
+    UseTls = true
+    UseTlsInsecure = false
+
 
     # SendDelay is a short timer that will be triggered when a trace is complete.
     # Refinery will wait this duration before actually sending the trace.  The
@@ -114,6 +120,10 @@ data:
     # Not eligible for live reload
     AddHostMetadataToTrace = false
 
+    # Metrics are sent to OpsRamp (The collection happens based on configuration specifie
+    # in OpsRampMetrics and only works when the Metrics is set to "prometheus")
+    SendMetricsToOpsRamp = false
+
     ############################
     ## Implementation Choices ##
     ############################
@@ -130,17 +140,6 @@ data:
     # implementations of the Collector interface.
     Collector = "InMemCollector"
 
-    # Logger describes which logger to use for Refinery logs. Valid options are
-    # "logrus" and "honeycomb". The logrus option will write logs to STDOUT and the
-    # honeycomb option will send them to a Honeycomb dataset.
-    Logger = "logrus"
-
-    # Metrics describes which service to use for Refinery metrics. Valid options are
-    # "prometheus" and "honeycomb". The prometheus option starts a listener that
-    # will reply to a request for /metrics. The honeycomb option will send summary
-    # metrics to a Honeycomb dataset.
-    Metrics = "prometheus"
-
     #########################
     ## Peer Management     ##
     #########################
@@ -153,11 +152,11 @@ data:
     # hostname (or ip address) and port. All servers in the cluster should be in
     # this list, including this host.
     Peers = [
-      "http://127.0.0.1:8083",
-      # "http://127.0.0.1:8083",
-      # "http://10.1.2.3.4:8080",
-      # "http://refinery-1231:8080",
-      # "http://peer-3.fqdn" // assumes port 80
+        "http://127.0.0.1:8083",
+        # "http://127.0.0.1:8083",
+        # "http://10.1.2.3.4:8080",
+        # "http://refinery-1231:8080",
+        # "http://peer-3.fqdn" // assumes port 80
     ]
 
     # [PeerManagement]
@@ -236,85 +235,94 @@ data:
     ###################
 
     # LogrusLogger is a section of the config only used if you are using the
-    # LogrusLogger to send all logs to STDOUT using the logrus package. If you are
-    # using a different logger (eg honeycomb logger) you can leave all this
-    # commented out.
+    # LogrusLogger to send all logs to STDOUT using the logrus package.
     [LogrusLogger]
 
-    # logrus logger currently has no options!
+    # LogFormatter specifies the log format. Accepted values are one of ["logfmt", "json"]
+    LogFormatter = "logfmt"
 
-    ######################
-    ## Honeycomb Logger ##
-    ######################
+    # LogOutput specifies where the logs are supposed to be written. Accpets one of ["stdout", "stderr", "file"]
+    LogOutput = "file"
 
-    # HoneycombLogger is a section of the config only used if you are using the
-    # HoneycombLogger to send all logs to a Honeycomb Dataset. If you are using a
-    # different logger (eg file-based logger) you can leave all this commented out.
+    ## LogrusLogger.File - specifies configs for logs when LogOutput is set to "file"
+    [LogrusLogger.File]
 
-    [HoneycombLogger]
+    # FileName specifies the location where the logs are supposed be stored
+    FileName = "/var/log/opsramp/tracing-proxy.log"
 
-    # LoggerHoneycombAPI is the URL for the upstream Honeycomb API.
-    # Eligible for live reload.
-    LoggerHoneycombAPI = "https://api.honeycomb.io"
+    # MaxSize is the maximum size in megabytes of the log file before it gets rotated.
+    MaxSize = 1
 
-    # LoggerAPIKey is the API key to use to send log events to the Honeycomb logging
-    # dataset. This is separate from the APIKeys used to authenticate regular
-    # traffic.
-    # Eligible for live reload.
-    LoggerAPIKey = "abcd1234"
+    # MaxBackups is the maximum number of old log files to retain.
+    MaxBackups = 3
 
-    # LoggerDataset is the name of the dataset to which to send Refinery logs
-    # Eligible for live reload.
-    LoggerDataset = "Refinery Logs"
-
-    # LoggerSamplerEnabled enables a PerKeyThroughput dynamic sampler for log messages.
-    # This will sample log messages based on [log level:message] key on a per second throughput basis.
-    # Not eligible for live reload.
-    LoggerSamplerEnabled = true
-
-    # LoggerSamplerThroughput is the per key per second throughput for the log message dynamic sampler.
-    # Not eligible for live reload.
-    LoggerSamplerThroughput = 10
-
-    #######################
-    ## Honeycomb Metrics ##
-    #######################
-
-    # HoneycombMetrics is a section of the config only used if you are using the
-    # HoneycombMetrics to send all metrics to a Honeycomb Dataset. If you are using a
-    # different metrics service (eg prometheus or metricsd) you can leave all this
-    # commented out.
-
-    [HoneycombMetrics]
-
-    # MetricsHoneycombAPI is the URL for the upstream Honeycomb API.
-    # Eligible for live reload.
-    MetricsHoneycombAPI = "https://api.honeycomb.io"
-
-    # MetricsAPIKey is the API key to use to send log events to the Honeycomb logging
-    # dataset. This is separate from the APIKeys used to authenticate regular
-    # traffic.
-    # Eligible for live reload.
-    MetricsAPIKey = "abcd1234"
-
-    # MetricsDataset is the name of the dataset to which to send Refinery metrics
-    # Eligible for live reload.
-    MetricsDataset = "Refinery Metrics"
-
-    # MetricsReportingInterval is the frequency (in seconds) to send metric events
-    # to Honeycomb. Between 1 and 60 is recommended.
-    # Not eligible for live reload.
-    MetricsReportingInterval = 3
+    # Compress determines if the rotated log files should be compressed
+    # using gzip.
+    Compress = true
 
 
     #####################@##
     ## Prometheus Metrics ##
     #####################@##
 
-    [PrometheusMetrics]
-
+    [OpsRampMetrics]
     # MetricsListenAddr determines the interface and port on which Prometheus will
     # listen for requests for /metrics. Must be different from the main Refinery
     # listener.
     # Not eligible for live reload.
     MetricsListenAddr = "localhost:2112"
+
+    # OpsRampMetricsAPI is the URL for the upstream OpsRamp API.
+    # Not Eligible for live reload.
+    OpsRampMetricsAPI = "https://placeholder.api.com/"
+
+    # OpsRampTenantID is the Client or Tenant ID where the metrics are supposed to be pushed.
+    # Not Eligible for live reload.
+    OpsRampTenantID = "placeholder_tenantID"
+
+    # OpsRampMetricsAPIKey is the API key to use to send metrics to the OpsRamp.
+    # This is separate from the APIKeys used to authenticate regular
+    # traffic.
+    # Not Eligible for live reload.
+    OpsRampMetricsAPIKey = "placeholder_key"
+
+    # OpsRampMetricsAPISecret is the API Secret to use to send metrics to the OpsRamp.
+    # This is separate from the APISecret used to authenticate regular
+    # traffic.
+    # Not Eligible for live reload.
+    OpsRampMetricsAPISecret = "placeholder_secret"
+
+    # OpsRampMetricsReportingInterval is frequency specified in seconds at which
+    # the metrics are collected and sent to OpsRamp
+    # Not Eligible for live reload.
+    OpsRampMetricsReportingInterval = 10
+
+    # OpsRampMetricsRetryCount is the number of times we retry incase the send fails
+    # Not Eligible for live reload.
+    OpsRampMetricsRetryCount = 2
+
+    # ProxyProtocol accepts http and https
+    # Not Eligible for live reload.
+    ProxyProtocol = ""
+
+    # ProxyServer takes the proxy server address
+    # Not Eligible for live reload.
+    ProxyServer = ""
+
+    # ProxyPort takes the proxy server port
+    # Not Eligible for live reload.
+    ProxyPort = 3128
+
+    # ProxyUserName takes the proxy username
+    # Not Eligible for live reload.
+    ProxyUserName = ""
+
+    # ProxyPassword takes the proxy password
+    # Not Eligible for live reload.
+    ProxyPassword = ""
+
+    # OpsRampMetricsList is a list of regular expressions which match the metric
+    # names. Keep the list as small as possible since too many regular expressions can lead to bad performance.
+    # Internally all the regex in the list are concatinated using '|' to make the computation little faster.
+    # Not Eligible for live reload
+    OpsRampMetricsList = [".*"]

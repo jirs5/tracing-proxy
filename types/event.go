@@ -6,12 +6,12 @@ import (
 )
 
 const (
-	APIKeyHeader = "X-Honeycomb-Team"
+	APIKeyHeader = "X-OpsRamp-Team"
 	// libtrace-js uses this
-	APIKeyHeaderShort = "X-Hny-Team"
-	DatasetHeader     = "X-Honeycomb-Dataset"
-	SampleRateHeader  = "X-Honeycomb-Samplerate"
-	TimestampHeader   = "X-Honeycomb-Event-Time"
+	APIKeyHeaderShort = "X-Ops-Team"
+	DatasetHeader     = "X-OpsRamp-Dataset"
+	SampleRateHeader  = "X-OpsRamp-Samplerate"
+	TimestampHeader   = "X-OpsRamp-Event-Time"
 )
 
 // used to put a request ID into the request context for logging

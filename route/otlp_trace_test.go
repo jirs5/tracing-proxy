@@ -26,7 +26,7 @@ import (
 )
 
 func TestOTLPHandler(t *testing.T) {
-	md := metadata.New(map[string]string{"x-honeycomb-team": "meow", "x-honeycomb-dataset": "ds"})
+	md := metadata.New(map[string]string{"x-opsramp-team": "meow", "x-opsramp-dataset": "ds"})
 	ctx := metadata.NewIncomingContext(context.Background(), md)
 
 	mockMetrics := metrics.MockMetrics{}
@@ -200,8 +200,8 @@ func TestOTLPHandler(t *testing.T) {
 		request, _ := http.NewRequest("POST", "/v1/traces", strings.NewReader(string(body)))
 		request.Header = http.Header{}
 		request.Header.Set("content-type", "application/protobuf")
-		request.Header.Set("x-honeycomb-team", "apikey")
-		request.Header.Set("x-honeycomb-dataset", "dataset")
+		request.Header.Set("x-opsramp-team", "apikey")
+		request.Header.Set("x-opsramp-dataset", "dataset")
 
 		w := httptest.NewRecorder()
 		router.postOTLP(w, request)
@@ -236,8 +236,8 @@ func TestOTLPHandler(t *testing.T) {
 		request.Header = http.Header{}
 		request.Header.Set("content-type", "application/protobuf")
 		request.Header.Set("content-encoding", "gzip")
-		request.Header.Set("x-honeycomb-team", "apikey")
-		request.Header.Set("x-honeycomb-dataset", "dataset")
+		request.Header.Set("x-opsramp-team", "apikey")
+		request.Header.Set("x-opsramp-dataset", "dataset")
 
 		w := httptest.NewRecorder()
 		router.postOTLP(w, request)
@@ -275,8 +275,8 @@ func TestOTLPHandler(t *testing.T) {
 		request.Header = http.Header{}
 		request.Header.Set("content-type", "application/protobuf")
 		request.Header.Set("content-encoding", "zstd")
-		request.Header.Set("x-honeycomb-team", "apikey")
-		request.Header.Set("x-honeycomb-dataset", "dataset")
+		request.Header.Set("x-opsramp-team", "apikey")
+		request.Header.Set("x-opsramp-dataset", "dataset")
 
 		w := httptest.NewRecorder()
 		router.postOTLP(w, request)
@@ -290,8 +290,8 @@ func TestOTLPHandler(t *testing.T) {
 		request, _ := http.NewRequest("POST", "/v1/traces", strings.NewReader("{}"))
 		request.Header = http.Header{}
 		request.Header.Set("content-type", "application/json")
-		request.Header.Set("x-honeycomb-team", "apikey")
-		request.Header.Set("x-honeycomb-dataset", "dataset")
+		request.Header.Set("x-opsramp-team", "apikey")
+		request.Header.Set("x-opsramp-dataset", "dataset")
 
 		w := httptest.NewRecorder()
 		router.postOTLP(w, request)

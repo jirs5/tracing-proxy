@@ -305,7 +305,7 @@ func (r *Router) requestToEvent(req *http.Request, reqBod []byte) (*types.Event,
 	vars := mux.Vars(req)
 	dataset := vars["datasetName"]
 
-	apiHost, err := r.Config.GetHoneycombAPI()
+	apiHost, err := r.Config.GetOpsRampAPI()
 	if err != nil {
 		return nil, err
 	}
@@ -506,7 +506,7 @@ func (r *Router) batchedEventToEvent(req *http.Request, bev batchedEvent) (*type
 	// once for the entire batch instead of in every event.
 	vars := mux.Vars(req)
 	dataset := vars["datasetName"]
-	apiHost, err := r.Config.GetHoneycombAPI()
+	apiHost, err := r.Config.GetOpsRampAPI()
 	if err != nil {
 		return nil, err
 	}

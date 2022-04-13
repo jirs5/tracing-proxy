@@ -8,17 +8,17 @@ import (
 	"strings"
 )
 
-// proxy will pass the request through to Honeycomb unchanged and relay the
+// proxy will pass the request through to OpsRamp unchanged and relay the
 // response, blocking until it gets one. This is used for all non-event traffic
 // (eg team api key verification, markers, etc.)
 func (r *Router) proxy(w http.ResponseWriter, req *http.Request) {
 	r.Metrics.Increment(r.incomingOrPeer + "_router_proxied")
 	r.Logger.Debug().Logf("proxying request for %s", req.URL.Path)
-	upstreamTarget, err := r.Config.GetHoneycombAPI()
+	upstreamTarget, err := r.Config.GetOpsRampAPI()
 	if err != nil {
 		w.WriteHeader(http.StatusServiceUnavailable)
 		io.WriteString(w, `{"error":"upstream target unavailable"}`)
-		r.Logger.Error().Logf("error getting honeycomb API config: %s", err)
+		r.Logger.Error().Logf("error getting OpsRamp API config: %s", err)
 		return
 	}
 	forwarded := req.Header.Get("X-Forwarded-For")

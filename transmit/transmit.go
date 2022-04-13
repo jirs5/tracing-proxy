@@ -15,7 +15,7 @@ import (
 )
 
 type Transmission interface {
-	// Enqueue accepts a single event and schedules it for transmission to Honeycomb
+	// Enqueue accepts a single event and schedules it for transmission to OpsRamp
 	EnqueueEvent(ev *types.Event)
 	EnqueueSpan(ev *types.Span)
 	// Flush flushes the in-flight queue of all events and spans
@@ -50,7 +50,7 @@ func (d *DefaultTransmission) Start() error {
 
 	// upstreamAPI doesn't get set when the client is initialized, because
 	// it can be reloaded from the config file while live
-	upstreamAPI, err := d.Config.GetHoneycombAPI()
+	upstreamAPI, err := d.Config.GetOpsRampAPI()
 	if err != nil {
 		return err
 	}
@@ -84,10 +84,10 @@ func (d *DefaultTransmission) Start() error {
 
 func (d *DefaultTransmission) reloadTransmissionBuilder() {
 	d.Logger.Debug().Logf("reloading transmission config")
-	upstreamAPI, err := d.Config.GetHoneycombAPI()
+	upstreamAPI, err := d.Config.GetOpsRampAPI()
 	if err != nil {
 		// log and skip reload
-		d.Logger.Error().Logf("Failed to reload Honeycomb API when reloading configs:", err)
+		d.Logger.Error().Logf("Failed to reload OpsRamp API when reloading configs:", err)
 	}
 	builder := d.LibhClient.NewBuilder()
 	builder.APIHost = upstreamAPI

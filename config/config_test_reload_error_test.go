@@ -28,11 +28,14 @@ func TestErrorReloading(t *testing.T) {
 	[InMemCollector]
 		CacheCapacity=1000
 
-	[HoneycombMetrics]
-		MetricsHoneycombAPI="http://jirs5"
-		MetricsAPIKey="1234"
-		MetricsDataset="testDatasetName"
-		MetricsReportingInterval=3
+	[OpsRampMetrics]
+		MetricsListenAddr = "localhost:2112"
+		OpsRampMetricsAPI = "https://placeholder.api.com/"
+		OpsRampTenantID = "placeholder_tenantID"
+		OpsRampMetricsAPIKey = "placeholder_key"
+		OpsRampMetricsAPISecret = "placeholder_secret"
+		OpsRampMetricsReportingInterval = 10
+		OpsRampMetricsRetryCount = 2
 	`)
 
 	_, err = configFile.Write(dummy)

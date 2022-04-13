@@ -16,8 +16,6 @@ type MockConfig struct {
 	GetCollectorTypeVal                  string
 	GetInMemoryCollectorCacheCapacityErr error
 	GetInMemoryCollectorCacheCapacityVal InMemoryCollectorCacheCapacity
-	GetHoneycombAPIErr                   error
-	GetHoneycombAPIVal                   string
 	GetListenAddrErr                     error
 	GetListenAddrVal                     string
 	GetPeerListenAddrErr                 error
@@ -98,12 +96,6 @@ func (m *MockConfig) GetInMemCollectorCacheCapacity() (InMemoryCollectorCacheCap
 	defer m.Mux.RUnlock()
 
 	return m.GetInMemoryCollectorCacheCapacityVal, m.GetInMemoryCollectorCacheCapacityErr
-}
-func (m *MockConfig) GetHoneycombAPI() (string, error) {
-	m.Mux.RLock()
-	defer m.Mux.RUnlock()
-
-	return m.GetHoneycombAPIVal, m.GetHoneycombAPIErr
 }
 func (m *MockConfig) GetListenAddr() (string, error) {
 	m.Mux.RLock()

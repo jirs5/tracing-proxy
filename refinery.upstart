@@ -1,4 +1,4 @@
-# Upstart job for tracing-proxy, the Honeycomb Trace-Aware Sampling Proxy
+# Upstart job for tracing-proxy, the OpsRamp Trace-Aware Sampling Proxy
 # https://jirs5/
 
 description     "tracing-proxy Daemon"
@@ -9,4 +9,4 @@ stop on runlevel [!2345]
 
 respawn
 
-exec su -s /bin/sh -c 'exec "$0" "$@"' honeycomb -- /usr/bin/tracing-proxy -c /etc/tracing-proxy/tracing-proxy.toml -r /etc/tracing-proxy/rules.toml
+exec su -s /bin/sh -c 'exec "$0" "$@"' opsramp -- /usr/bin/tracing-proxy -c /etc/tracing-proxy/tracing-proxy.toml -r /etc/tracing-proxy/rules.toml

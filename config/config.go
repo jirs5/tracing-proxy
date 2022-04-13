@@ -33,7 +33,7 @@ type Config interface {
 	// incoming events over gRPC
 	GetGRPCListenAddr() (string, error)
 
-	// GetAPIKeys returns a list of Honeycomb API keys
+	// GetAPIKeys returns a list of OpsRamp API keys
 	GetAPIKeys() ([]string, error)
 
 	// GetPeers returns a list of other servers participating in this proxy cluster
@@ -56,9 +56,9 @@ type Config interface {
 	// UseTLSInsecure returns true when certificate checks are disabled
 	GetUseTLSInsecure() (bool, error)
 
-	// GetHoneycombAPI returns the base URL (protocol, hostname, and port) of
-	// the upstream Honeycomb API server
-	GetHoneycombAPI() (string, error)
+	// GetOpsRampAPI returns the base URL (protocol, hostname, and port) of
+	// the upstream OpsRamp API server
+	GetOpsRampAPI() (string, error)
 
 	// GetLoggingLevel returns the verbosity with which we should log
 	GetLoggingLevel() (string, error)

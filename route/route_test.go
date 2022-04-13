@@ -256,33 +256,33 @@ func TestGetAPIKeyAndDatasetFromMetadataCaseInsensitive(t *testing.T) {
 	}{
 		{
 			name:          "lowercase",
-			apikeyHeader:  "x-honeycomb-team",
-			datasetHeader: "x-honeycomb-dataset",
+			apikeyHeader:  "x-opsramp-team",
+			datasetHeader: "x-opsramp-dataset",
 		},
 		{
 			name:          "uppercase",
-			apikeyHeader:  "X-HONEYCOMB-TEAM",
-			datasetHeader: "X-HONEYCOMB-DATASET",
+			apikeyHeader:  "X-OPSRAMP-TEAM",
+			datasetHeader: "X-OPSRAMP-DATASET",
 		},
 		{
 			name:          "mixed-case",
-			apikeyHeader:  "x-HoNeYcOmB-tEaM",
-			datasetHeader: "X-hOnEyCoMb-DaTaSeT",
+			apikeyHeader:  "x-OpSrAmP-tEaM",
+			datasetHeader: "X-OpSrAmP-DaTaSeT",
 		},
 		{
 			name:          "lowercase-short",
-			apikeyHeader:  "x-hny-team",
-			datasetHeader: "x-honeycomb-dataset",
+			apikeyHeader:  "x-ops-team",
+			datasetHeader: "x-opsramp-dataset",
 		},
 		{
 			name:          "uppercase-short",
-			apikeyHeader:  "X-HNY-TEAM",
-			datasetHeader: "X-HONEYCOMB-DATASET",
+			apikeyHeader:  "X-OPS-TEAM",
+			datasetHeader: "X-OPSRAMP-DATASET",
 		},
 		{
 			name:          "mixed-case-short",
-			apikeyHeader:  "X-hNy-TeAm",
-			datasetHeader: "X-hOnEyCoMb-DaTaSeT",
+			apikeyHeader:  "X-oPs-TeAm",
+			datasetHeader: "X-oPsRaMp-DaTaSeT",
 		},
 	}
 

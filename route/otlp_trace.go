@@ -68,7 +68,7 @@ func processTraceRequest(
 	tenantId string) error {
 
 	var requestID types.RequestIDContextKey
-	apiHost, err := router.Config.GetHoneycombAPI()
+	apiHost, err := router.Config.GetOpsRampAPI()
 	if err != nil {
 		router.Logger.Error().Logf("Unable to retrieve APIHost from config while processing OTLP batch")
 		return err

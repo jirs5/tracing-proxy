@@ -32,8 +32,8 @@ PeerListenAddr = "0.0.0.0:8083"
 # utilization over data transfer costs.
 CompressPeerCommunication = true
 
-# APIKeys is a list of Honeycomb API keys that the proxy will accept. This list
-# only applies to events - other Honeycomb API actions will fall through to the
+# APIKeys is a list of OpsRamp API keys that the proxy will accept. This list
+# only applies to events - other OpsRamp API actions will fall through to the
 # upstream API directly.
 # Adding keys here causes events arriving with API keys not in this list to be
 # rejected with an HTTP 401 error If an API key that is a literal '*' is in the
@@ -45,10 +45,10 @@ APIKeys = [
     "*", # wildcard accept all keys
 ]
 
-# HoneycombAPI is the URL for the upstream Honeycomb API.
+# OpsRampAPI is the URL for the upstream OpsRamp API.
 # Eligible for live reload.
-#HoneycombAPI = "localhost:50052"
-HoneycombAPI = "https://asura.opsramp.net"
+#OpsRampAPI = "localhost:50052"
+OpsRampAPI = "https://asura.opsramp.net"
 
 
 #Tls Options
@@ -220,9 +220,7 @@ MaxAlloc = 0
 ###################
 
 # LogrusLogger is a section of the config only used if you are using the
-# LogrusLogger to send all logs to STDOUT using the logrus package. If you are
-# using a different logger (eg honeycomb logger) you can leave all this
-# commented out.
+# LogrusLogger to send all logs to STDOUT using the logrus package.
 [LogrusLogger]
 
 # LogFormatter specifies the log format. Accepted values are one of ["logfmt", "json"]

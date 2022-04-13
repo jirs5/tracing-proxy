@@ -404,7 +404,7 @@ func TestRules(t *testing.T) {
 				{
 					Event: types.Event{
 						Data: map[string]interface{}{
-							"first": "honeycomb",
+							"first": "opsramp",
 						},
 					},
 				},
@@ -432,7 +432,7 @@ func TestRules(t *testing.T) {
 				{
 					Event: types.Event{
 						Data: map[string]interface{}{
-							"first": "honeycomb",
+							"first": "opsramp",
 						},
 					},
 				},
@@ -460,7 +460,7 @@ func TestRules(t *testing.T) {
 				{
 					Event: types.Event{
 						Data: map[string]interface{}{
-							"first": "honeycomb",
+							"first": "opsramp",
 						},
 					},
 				},

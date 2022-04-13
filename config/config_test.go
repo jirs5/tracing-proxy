@@ -61,12 +61,6 @@ func TestReload(t *testing.T) {
 
 	[InMemCollector]
 		CacheCapacity=1000
-
-	[HoneycombMetrics]
-		MetricsHoneycombAPI="http://jirs5"
-		MetricsAPIKey="1234"
-		MetricsDataset="testDatasetName"
-		MetricsReportingInterval=3
 	`)
 
 	_, err = configFile.Write(dummy)
@@ -241,12 +235,6 @@ func TestPeerManagementType(t *testing.T) {
 	[InMemCollector]
 		CacheCapacity=1000
 
-	[HoneycombMetrics]
-		MetricsHoneycombAPI="http://jirs5"
-		MetricsAPIKey="1234"
-		MetricsDataset="testDatasetName"
-		MetricsReportingInterval=3
-
 	[PeerManagement]
 		Type = "redis"
 		Peers = ["http://tracing-proxy-1231:8080"]
@@ -274,12 +262,6 @@ func TestAbsentTraceKeyField(t *testing.T) {
 	_, err = configFile.Write([]byte(`
 		[InMemCollector]
 			CacheCapacity=1000
-
-		[HoneycombMetrics]
-			MetricsHoneycombAPI="http://jirs5"
-			MetricsAPIKey="1234"
-			MetricsDataset="testDatasetName"
-			MetricsReportingInterval=3
 	`))
 	assert.NoError(t, err)
 
@@ -316,12 +298,6 @@ func TestDebugServiceAddr(t *testing.T) {
 
 	[InMemCollector]
 		CacheCapacity=1000
-
-	[HoneycombMetrics]
-		MetricsHoneycombAPI="http://jirs5"
-		MetricsAPIKey="1234"
-		MetricsDataset="testDatasetName"
-		MetricsReportingInterval=3
 	`))
 
 	c, err := NewConfig(configFile.Name(), rulesFile.Name(), func(err error) {})
@@ -343,12 +319,6 @@ func TestDryRun(t *testing.T) {
 	_, err = configFile.Write([]byte(`
 	[InMemCollector]
 		CacheCapacity=1000
-
-	[HoneycombMetrics]
-		MetricsHoneycombAPI="http://jirs5"
-		MetricsAPIKey="1234"
-		MetricsDataset="testDatasetName"
-		MetricsReportingInterval=3
 	`))
 
 	rulesFile, err := ioutil.TempFile(tmpDir, "*.toml")
@@ -381,12 +351,6 @@ func TestMaxAlloc(t *testing.T) {
 	[InMemCollector]
 		CacheCapacity=1000
 		MaxAlloc=17179869184
-
-	[HoneycombMetrics]
-		MetricsHoneycombAPI="http://jirs5"
-		MetricsAPIKey="1234"
-		MetricsDataset="testDatasetName"
-		MetricsReportingInterval=3
 	`))
 
 	c, err := NewConfig(configFile.Name(), rulesFile.Name(), func(err error) {})
@@ -409,12 +373,6 @@ func TestGetSamplerTypes(t *testing.T) {
 	_, err = configFile.Write([]byte(`
 	[InMemCollector]
 		CacheCapacity=1000
-
-	[HoneycombMetrics]
-		MetricsHoneycombAPI="http://jirs5"
-		MetricsAPIKey="1234"
-		MetricsDataset="testDatasetName"
-		MetricsReportingInterval=3
 	`))
 
 	rulesFile, err := ioutil.TempFile(tmpDir, "*.toml")
@@ -500,12 +458,6 @@ func TestDefaultSampler(t *testing.T) {
 	dummy := []byte(`
 	[InMemCollector]
 		CacheCapacity=1000
-
-	[HoneycombMetrics]
-		MetricsHoneycombAPI="http://jirs5"
-		MetricsAPIKey="1234"
-		MetricsDataset="testDatasetName"
-		MetricsReportingInterval=3
 	`)
 
 	_, err = configFile.Write(dummy)
@@ -521,95 +473,4 @@ func TestDefaultSampler(t *testing.T) {
 	assert.NoError(t, err)
 
 	assert.IsType(t, &DeterministicSamplerConfig{}, s)
-}
-
-func TestHoneycombLoggerConfig(t *testing.T) {
-	tmpDir, err := ioutil.TempDir("", "")
-	assert.NoError(t, err)
-	defer os.RemoveAll(tmpDir)
-
-	rulesFile, err := ioutil.TempFile(tmpDir, "*.toml")
-	assert.NoError(t, err)
-
-	configFile, err := ioutil.TempFile(tmpDir, "*.toml")
-	assert.NoError(t, err)
-
-	dummy := []byte(`
-	[InMemCollector]
-		CacheCapacity=1000
-
-	[HoneycombMetrics]
-		MetricsHoneycombAPI="http://jirs5"
-		MetricsAPIKey="1234"
-		MetricsDataset="testDatasetName"
-		MetricsReportingInterval=3
-
-	[HoneycombLogger]
-		LoggerHoneycombAPI="http://jirs5"
-		LoggerAPIKey="1234"
-		LoggerDataset="loggerDataset"
-		LoggerSamplerEnabled=true
-		LoggerSamplerThroughput=10
-	`)
-
-	_, err = configFile.Write(dummy)
-	assert.NoError(t, err)
-	configFile.Close()
-
-	c, err := NewConfig(configFile.Name(), rulesFile.Name(), func(err error) {})
-
-	assert.NoError(t, err)
-
-	loggerConfig, err := c.GetHoneycombLoggerConfig()
-
-	assert.NoError(t, err)
-
-	assert.Equal(t, "http://jirs5", loggerConfig.LoggerHoneycombAPI)
-	assert.Equal(t, "1234", loggerConfig.LoggerAPIKey)
-	assert.Equal(t, "loggerDataset", loggerConfig.LoggerDataset)
-	assert.Equal(t, true, loggerConfig.LoggerSamplerEnabled)
-	assert.Equal(t, 10, loggerConfig.LoggerSamplerThroughput)
-}
-
-func TestHoneycombLoggerConfigDefaults(t *testing.T) {
-	tmpDir, err := ioutil.TempDir("", "")
-	assert.NoError(t, err)
-	defer os.RemoveAll(tmpDir)
-
-	rulesFile, err := ioutil.TempFile(tmpDir, "*.toml")
-	assert.NoError(t, err)
-
-	configFile, err := ioutil.TempFile(tmpDir, "*.toml")
-	assert.NoError(t, err)
-
-	dummy := []byte(`
-	[InMemCollector]
-		CacheCapacity=1000
-
-	[HoneycombMetrics]
-		MetricsHoneycombAPI="http://jirs5"
-		MetricsAPIKey="1234"
-		MetricsDataset="testDatasetName"
-		MetricsReportingInterval=3
-
-	[HoneycombLogger]
-		LoggerHoneycombAPI="http://jirs5"
-		LoggerAPIKey="1234"
-		LoggerDataset="loggerDataset"
-	`)
-
-	_, err = configFile.Write(dummy)
-	assert.NoError(t, err)
-	configFile.Close()
-
-	c, err := NewConfig(configFile.Name(), rulesFile.Name(), func(err error) {})
-
-	assert.NoError(t, err)
-
-	loggerConfig, err := c.GetHoneycombLoggerConfig()
-
-	assert.NoError(t, err)
-
-	assert.Equal(t, false, loggerConfig.LoggerSamplerEnabled)
-	assert.Equal(t, 5, loggerConfig.LoggerSamplerThroughput)
 }
