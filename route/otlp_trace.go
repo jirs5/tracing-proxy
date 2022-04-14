@@ -106,7 +106,7 @@ func (r *Router) ExportTraceProxy(ctx context.Context, in *proxypb.ExportTracePr
 	fmt.Println("Received Trace data from peer \n")
 
 	var token, tenantId, datasetName string
-	apiHost, err := r.Config.GetHoneycombAPI()
+	apiHost, err := r.Config.GetOpsRampAPI()
 	if err != nil {
 		r.Logger.Error().Logf("Unable to retrieve APIHost from config while processing OTLP batch")
 		return &proxypb.ExportTraceProxyServiceResponse{Message: "Failed to get apihost", Status: "Failed"}, nil
