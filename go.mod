@@ -25,9 +25,9 @@ require (
 	github.com/klauspost/compress v1.13.6
 	github.com/leodido/go-urn v1.2.0 // indirect
 	github.com/pkg/errors v0.9.1
-	github.com/prometheus/client_golang v1.11.0
+	github.com/prometheus/client_golang v1.12.1
 	github.com/prometheus/client_model v0.2.0
-	github.com/prometheus/common v0.26.0
+	github.com/prometheus/common v0.32.1
 	github.com/prometheus/prometheus v2.5.0+incompatible
 	github.com/rcrowley/go-metrics v0.0.0-20200313005456-10cdbea86bc0
 	github.com/sirupsen/logrus v1.8.1
