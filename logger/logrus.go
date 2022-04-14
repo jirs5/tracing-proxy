@@ -1,10 +1,14 @@
 package logger
 
 import (
+	"bytes"
+	"fmt"
 	"github.com/jirs5/tracing-proxy/config"
 	"github.com/sirupsen/logrus"
 	lumberjack "gopkg.in/natefinch/lumberjack.v2"
 	"os"
+	"strings"
+	"time"
 )
 
 // LogrusLogger is a Logger implementation that sends all logs to stdout using
@@ -45,6 +49,8 @@ func (l *LogrusLogger) Start() error {
 	}
 
 	switch logrusConfig.LogFormatter {
+	case "opsramp":
+		l.logger.SetFormatter(&OpsRampLogFormat{})
 	case "logfmt":
 		l.logger.SetFormatter(&logrus.TextFormatter{
 			DisableColors:          true,
@@ -207,4 +213,34 @@ func (l *LogrusEntry) Logf(f string, args ...interface{}) {
 	default:
 		l.entry.Errorf(f, args...)
 	}
+}
+
+// Custom Log Formatter for OpsRamp
+type OpsRampLogFormat struct {
+	TimestampFormat string
+}
+
+func (f *OpsRampLogFormat) Format(entry *logrus.Entry) ([]byte, error) {
+	b := &bytes.Buffer{}
+
+	if entry.Buffer != nil {
+		b = entry.Buffer
+	}
+
+	if f.TimestampFormat == "" {
+		f.TimestampFormat = time.RFC3339
+	}
+
+	b.WriteString(fmt.Sprintf("%s [%s]", entry.Time.Format(f.TimestampFormat), entry.Level.String()))
+
+	if entry.HasCaller() {
+		b.WriteString(fmt.Sprintf(" [%s:%v] ", entry.Caller.File[strings.LastIndex(entry.Caller.File, "/")+1:], entry.Caller.Line))
+	} else {
+		b.WriteString(" [:-(] ")
+	}
+
+	b.WriteString(entry.Message)
+
+	b.WriteByte('\n')
+	return b.Bytes(), nil
 }

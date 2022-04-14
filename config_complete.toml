@@ -223,11 +223,11 @@ MaxAlloc = 0
 # LogrusLogger to send all logs to STDOUT using the logrus package.
 [LogrusLogger]
 
-# LogFormatter specifies the log format. Accepted values are one of ["logfmt", "json"]
-LogFormatter = "logfmt"
+# LogFormatter specifies the log format. Accepted values are one of ["opsramp", "logfmt", "json"]
+LogFormatter = "opsramp"
 
 # LogOutput specifies where the logs are supposed to be written. Accpets one of ["stdout", "stderr", "file"]
-LogOutput = "file"
+LogOutput = "stdout"
 
 ## LogrusLogger.File - specifies configs for logs when LogOutput is set to "file"
 [LogrusLogger.File]
