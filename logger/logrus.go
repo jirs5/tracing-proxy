@@ -7,7 +7,8 @@ import (
 	"github.com/sirupsen/logrus"
 	"gopkg.in/natefinch/lumberjack.v2"
 	"os"
-	"strings"
+	"path"
+	"runtime"
 	"time"
 )
 
@@ -28,17 +29,41 @@ func (f *OpsRampLogFormat) Format(entry *logrus.Entry) ([]byte, error) {
 	}
 
 	b.WriteString(fmt.Sprintf("%s [%s]", entry.Time.Format(f.TimestampFormat), entry.Level.String()))
+	b.WriteByte(' ')
 
 	if entry.HasCaller() {
-		b.WriteString(fmt.Sprintf(" [%s:%v] ", entry.Caller.File[strings.LastIndex(entry.Caller.File, "/")+1:], entry.Caller.Line))
+		_, filepath := opsRampCallerPrettyfier(entry.Caller)
+		b.WriteString(fmt.Sprintf("[%v]", filepath))
 	} else {
 		b.WriteString(" [:-(] ")
+	}
+	b.WriteByte(' ')
+
+	if len(entry.Data) > 0 {
+		for key, value := range entry.Data {
+			f.appendKeyValue(b, key, value)
+		}
+		b.WriteByte(' ')
 	}
 
 	b.WriteString(entry.Message)
 
 	b.WriteByte('\n')
 	return b.Bytes(), nil
+}
+
+func (f *OpsRampLogFormat) appendKeyValue(b *bytes.Buffer, key string, value interface{}) {
+	b.WriteString(fmt.Sprintf("[%s", key))
+	b.WriteByte('=')
+	stringVal, ok := value.(string)
+	if !ok {
+		stringVal = fmt.Sprint(value)
+	}
+	b.WriteString(fmt.Sprintf("%q]", stringVal))
+}
+
+func opsRampCallerPrettyfier(frame *runtime.Frame) (function string, file string) {
+	return frame.Function, fmt.Sprintf("%s:%d", path.Base(frame.File), frame.Line)
 }
 
 func GetLoggerImplementation(c config.Config) (*logrus.Logger, error) {
@@ -95,6 +120,7 @@ func GetLoggerImplementation(c config.Config) (*logrus.Logger, error) {
 				logrus.FieldKeyMsg:   "message",
 				logrus.FieldKeyFunc:  "caller",
 			},
+			CallerPrettyfier: opsRampCallerPrettyfier,
 		})
 	case "json":
 		l.SetFormatter(&logrus.JSONFormatter{
@@ -105,6 +131,7 @@ func GetLoggerImplementation(c config.Config) (*logrus.Logger, error) {
 				logrus.FieldKeyMsg:   "message",
 				logrus.FieldKeyFunc:  "caller",
 			},
+			CallerPrettyfier: opsRampCallerPrettyfier,
 		})
 	}
 
