@@ -3,14 +3,14 @@ package app
 import (
 	"github.com/jirs5/tracing-proxy/collect"
 	"github.com/jirs5/tracing-proxy/config"
-	"github.com/jirs5/tracing-proxy/logger"
 	"github.com/jirs5/tracing-proxy/metrics"
 	"github.com/jirs5/tracing-proxy/route"
+	"github.com/sirupsen/logrus"
 )
 
 type App struct {
 	Config         config.Config     `inject:""`
-	Logger         logger.Logger     `inject:""`
+	Logger         *logrus.Logger    `inject:""`
 	IncomingRouter route.Router      `inject:"inline"`
 	PeerRouter     route.Router      `inject:"inline"`
 	Collector      collect.Collector `inject:""`
@@ -25,7 +25,7 @@ type App struct {
 // Start exits, Stop will be called on all dependencies then on App then the
 // program will exit.
 func (a *App) Start() error {
-	a.Logger.Debug().Logf("Starting up App...")
+	a.Logger.Debugf("Starting up App...")
 
 	a.IncomingRouter.SetVersion(a.Version)
 	a.PeerRouter.SetVersion(a.Version)
@@ -39,6 +39,6 @@ func (a *App) Start() error {
 }
 
 func (a *App) Stop() error {
-	a.Logger.Debug().Logf("Shutting down App...")
+	a.Logger.Debugf("Shutting down App...")
 	return nil
 }

@@ -1,19 +1,19 @@
 package sample
 
 import (
+	"github.com/sirupsen/logrus"
 	"math/rand"
 
 	dynsampler "github.com/honeycombio/dynsampler-go"
 
 	"github.com/jirs5/tracing-proxy/config"
-	"github.com/jirs5/tracing-proxy/logger"
 	"github.com/jirs5/tracing-proxy/metrics"
 	"github.com/jirs5/tracing-proxy/types"
 )
 
 type DynamicSampler struct {
 	Config  *config.DynamicSamplerConfig
-	Logger  logger.Logger
+	Logger  *logrus.Logger
 	Metrics metrics.Metrics
 
 	sampleRate        int64
@@ -26,8 +26,8 @@ type DynamicSampler struct {
 }
 
 func (d *DynamicSampler) Start() error {
-	d.Logger.Debug().Logf("Starting DynamicSampler")
-	defer func() { d.Logger.Debug().Logf("Finished starting DynamicSampler") }()
+	d.Logger.Debugf("Starting DynamicSampler")
+	defer func() { d.Logger.Debugf("Finished starting DynamicSampler") }()
 	d.sampleRate = d.Config.SampleRate
 	if d.Config.ClearFrequencySec == 0 {
 		d.Config.ClearFrequencySec = 30
@@ -57,12 +57,12 @@ func (d *DynamicSampler) GetSampleRate(trace *types.Trace) (uint, bool) {
 		rate = 1
 	}
 	shouldKeep := rand.Intn(int(rate)) == 0
-	d.Logger.Debug().WithFields(map[string]interface{}{
+	d.Logger.WithFields(map[string]interface{}{
 		"sample_key":  key,
 		"sample_rate": rate,
 		"sample_keep": shouldKeep,
 		"trace_id":    trace.TraceID,
-	}).Logf("got sample rate and decision")
+	}).Logf(logrus.DebugLevel, "got sample rate and decision")
 	if shouldKeep {
 		d.Metrics.Increment("dynsampler_num_kept")
 	} else {

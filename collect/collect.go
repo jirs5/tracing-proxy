@@ -3,6 +3,7 @@ package collect
 import (
 	"errors"
 	"fmt"
+	"github.com/sirupsen/logrus"
 	"os"
 	"runtime"
 	"sort"
@@ -12,7 +13,6 @@ import (
 	lru "github.com/hashicorp/golang-lru"
 	"github.com/jirs5/tracing-proxy/collect/cache"
 	"github.com/jirs5/tracing-proxy/config"
-	"github.com/jirs5/tracing-proxy/logger"
 	"github.com/jirs5/tracing-proxy/metrics"
 	"github.com/jirs5/tracing-proxy/sample"
 	"github.com/jirs5/tracing-proxy/transmit"
@@ -49,7 +49,7 @@ func GetCollectorImplementation(c config.Config) Collector {
 // InMemCollector is a single threaded collector
 type InMemCollector struct {
 	Config         config.Config          `inject:""`
-	Logger         logger.Logger          `inject:""`
+	Logger         *logrus.Logger         `inject:""`
 	Transmission   transmit.Transmission  `inject:"upstreamTransmission"`
 	Metrics        metrics.Metrics        `inject:"metrics"`
 	SamplerFactory *sample.SamplerFactory `inject:""`
@@ -80,8 +80,8 @@ type traceSentRecord struct {
 }
 
 func (i *InMemCollector) Start() error {
-	i.Logger.Debug().Logf("Starting InMemCollector")
-	defer func() { i.Logger.Debug().Logf("Finished starting InMemCollector") }()
+	i.Logger.Debugf("Starting InMemCollector")
+	defer func() { i.Logger.Debugf("Finished starting InMemCollector") }()
 	imcConfig, err := i.Config.GetInMemCollectorCacheCapacity()
 	if err != nil {
 		return err
@@ -148,22 +148,22 @@ func (i *InMemCollector) sendReloadSignal() {
 	// non-blocking insert of the signal here so we don't leak goroutines
 	select {
 	case i.reload <- struct{}{}:
-		i.Logger.Debug().Logf("sending collect reload signal")
+		i.Logger.Debugf("sending collect reload signal")
 	default:
-		i.Logger.Debug().Logf("collect already waiting to reload; skipping additional signal")
+		i.Logger.Debugf("collect already waiting to reload; skipping additional signal")
 	}
 }
 
 func (i *InMemCollector) reloadConfigs() {
-	i.Logger.Debug().Logf("reloading in-mem collect config")
+	i.Logger.Debugf("reloading in-mem collect config")
 	imcConfig, err := i.Config.GetInMemCollectorCacheCapacity()
 	if err != nil {
-		i.Logger.Error().WithField("error", err).Logf("Failed to reload InMemCollector section when reloading configs")
+		i.Logger.WithField("error", err).Logf(logrus.ErrorLevel, "Failed to reload InMemCollector section when reloading configs")
 	}
 
 	if existingCache, ok := i.cache.(*cache.DefaultInMemCache); ok {
 		if imcConfig.CacheCapacity != existingCache.GetCacheSize() {
-			i.Logger.Debug().WithField("cache_size.previous", existingCache.GetCacheSize()).WithField("cache_size.new", imcConfig.CacheCapacity).Logf("refreshing the cache because it changed size")
+			i.Logger.WithField("cache_size.previous", existingCache.GetCacheSize()).WithField("cache_size.new", imcConfig.CacheCapacity).Logf(logrus.DebugLevel, "refreshing the cache because it changed size")
 			c := cache.NewInMemCache(imcConfig.CacheCapacity, i.Metrics, i.Logger)
 			// pull the old cache contents into the new cache
 			for j, trace := range existingCache.GetAll() {
@@ -175,10 +175,10 @@ func (i *InMemCollector) reloadConfigs() {
 			}
 			i.cache = c
 		} else {
-			i.Logger.Debug().Logf("skipping reloading the cache on config reload because it hasn't changed capacity")
+			i.Logger.Debugf("skipping reloading the cache on config reload because it hasn't changed capacity")
 		}
 	} else {
-		i.Logger.Error().WithField("cache", i.cache.(*cache.DefaultInMemCache)).Logf("skipping reloading the cache on config reload because it's not an in-memory cache")
+		i.Logger.WithField("cache", i.cache.(*cache.DefaultInMemCache)).Logf(logrus.ErrorLevel, "skipping reloading the cache on config reload because it's not an in-memory cache")
 	}
 
 	// clear out any samplers that we have previously created
@@ -198,7 +198,8 @@ func (i *InMemCollector) checkAlloc() {
 
 	existingCache, ok := i.cache.(*cache.DefaultInMemCache)
 	if !ok || existingCache.GetCacheSize() < 100 {
-		i.Logger.Error().WithField("alloc", mem.Alloc).Logf(
+		i.Logger.WithField("alloc", mem.Alloc).Logf(
+			logrus.ErrorLevel,
 			"total allocation exceeds limit, but unable to shrink cache",
 		)
 		return
@@ -213,11 +214,11 @@ func (i *InMemCollector) checkAlloc() {
 
 	// Treat any MaxAlloc overage as an error. The configured cache capacity
 	// should be reduced to avoid this condition.
-	i.Logger.Error().
+	i.Logger.
 		WithField("cache_size.previous", oldCap).
 		WithField("cache_size.new", newCap).
 		WithField("alloc", mem.Alloc).
-		Logf("reducing cache size due to memory overage")
+		Logf(logrus.ErrorLevel, "reducing cache size due to memory overage")
 
 	c := cache.NewInMemCache(newCap, i.Metrics, i.Logger)
 
@@ -401,18 +402,18 @@ func (i *InMemCollector) dealWithSentTrace(keep bool, sampleRate uint, sp *types
 		// if dry run mode is enabled, we keep all traces and mark the spans with the sampling decision
 		sp.Data[field] = keep
 		if !keep {
-			i.Logger.Debug().WithField("trace_id", sp.TraceID).Logf("Sending span that would have been dropped, but dry run mode is enabled")
+			i.Logger.WithField("trace_id", sp.TraceID).Logf(logrus.DebugLevel, "Sending span that would have been dropped, but dry run mode is enabled")
 			i.Transmission.EnqueueSpan(sp)
 			return
 		}
 	}
 	if keep {
-		i.Logger.Debug().WithField("trace_id", sp.TraceID).Logf("Sending span because of previous decision to send trace")
+		i.Logger.WithField("trace_id", sp.TraceID).Logf(logrus.DebugLevel, "Sending span because of previous decision to send trace")
 		sp.SampleRate *= sampleRate
 		i.Transmission.EnqueueSpan(sp)
 		return
 	}
-	i.Logger.Debug().WithField("trace_id", sp.TraceID).Logf("Dropping span because of previous decision to drop trace")
+	i.Logger.WithField("trace_id", sp.TraceID).Logf(logrus.DebugLevel, "Dropping span because of previous decision to drop trace")
 }
 
 func isRootSpan(sp *types.Span) bool {
@@ -432,10 +433,10 @@ func (i *InMemCollector) send(trace *types.Trace) {
 		// someone else already sent this so we shouldn't also send it. This happens
 		// when two timers race and two signals for the same trace are sent down the
 		// toSend channel
-		i.Logger.Debug().
-			WithString("trace_id", trace.TraceID).
-			WithString("dataset", trace.Dataset).
-			Logf("skipping send because someone else already sent trace to dataset")
+		i.Logger.
+			WithField("trace_id", trace.TraceID).
+			WithField("dataset", trace.Dataset).
+			Logf(logrus.DebugLevel, "skipping send because someone else already sent trace to dataset")
 		return
 	}
 	trace.Sent = true
@@ -505,16 +506,16 @@ func (i *InMemCollector) send(trace *types.Trace) {
 	// if we're supposed to drop this trace, and dry run mode is not enabled, then we're done.
 	if !shouldSend && !i.Config.GetIsDryRun() {
 		i.Metrics.Increment("trace_send_dropped")
-		i.Logger.Info().WithString("trace_id", trace.TraceID).WithString("dataset", trace.Dataset).Logf("Dropping trace because of sampling, trace to dataset")
+		i.Logger.WithField("trace_id", trace.TraceID).WithField("dataset", trace.Dataset).Logf(logrus.InfoLevel, "Dropping trace because of sampling, trace to dataset")
 		return
 	}
 	i.Metrics.Increment("trace_send_kept")
 
 	// ok, we're not dropping this trace; send all the spans
 	if i.Config.GetIsDryRun() && !shouldSend {
-		i.Logger.Info().WithString("trace_id", trace.TraceID).WithString("dataset", trace.Dataset).Logf("Trace would have been dropped, but dry run mode is enabled")
+		i.Logger.WithField("trace_id", trace.TraceID).WithField("dataset", trace.Dataset).Logf(logrus.InfoLevel, "Trace would have been dropped, but dry run mode is enabled")
 	}
-	i.Logger.Info().WithString("trace_id", trace.TraceID).WithString("dataset", trace.Dataset).Logf("Sending trace to dataset")
+	i.Logger.WithField("trace_id", trace.TraceID).WithField("dataset", trace.Dataset).Logf(logrus.InfoLevel, "Sending trace to dataset")
 	for _, sp := range trace.GetSpans() {
 		if sp.SampleRate < 1 {
 			sp.SampleRate = 1

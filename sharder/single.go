@@ -1,7 +1,7 @@
 package sharder
 
 import (
-	"github.com/jirs5/tracing-proxy/logger"
+	"github.com/sirupsen/logrus"
 )
 
 // SingleShard implements the Shard interface
@@ -15,7 +15,7 @@ func (s *SingleShard) Equals(other Shard) bool { return true }
 func (s *SingleShard) GetAddress() string { return "" }
 
 type SingleServerSharder struct {
-	Logger logger.Logger `inject:""`
+	Logger *logrus.Logger `inject:""`
 }
 
 func (s *SingleServerSharder) MyShard() Shard {
@@ -23,6 +23,6 @@ func (s *SingleServerSharder) MyShard() Shard {
 }
 
 func (s *SingleServerSharder) WhichShard(traceID string) Shard {
-	s.Logger.Debug().WithField("trace_id", traceID).Logf("single server sharder; choosing self for trace")
+	s.Logger.WithField("trace_id", traceID).Logf(logrus.DebugLevel, "single server sharder; choosing self for trace")
 	return &selfShard
 }

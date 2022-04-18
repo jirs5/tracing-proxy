@@ -2,10 +2,10 @@ package sample
 
 import (
 	"crypto/sha1"
+	"github.com/sirupsen/logrus"
 	"math"
 
 	"github.com/jirs5/tracing-proxy/config"
-	"github.com/jirs5/tracing-proxy/logger"
 	"github.com/jirs5/tracing-proxy/types"
 )
 
@@ -15,15 +15,15 @@ const shardingSalt = "5VQ8l2jE5aJLPVqk"
 
 type DeterministicSampler struct {
 	Config *config.DeterministicSamplerConfig
-	Logger logger.Logger
+	Logger *logrus.Logger
 
 	sampleRate int
 	upperBound uint32
 }
 
 func (d *DeterministicSampler) Start() error {
-	d.Logger.Debug().Logf("Starting DeterministicSampler")
-	defer func() { d.Logger.Debug().Logf("Finished starting DeterministicSampler") }()
+	d.Logger.Debugf("Starting DeterministicSampler")
+	defer func() { d.Logger.Debugf("Finished starting DeterministicSampler") }()
 	d.sampleRate = d.Config.SampleRate
 
 	// Get the actual upper bound - the largest possible value divided by

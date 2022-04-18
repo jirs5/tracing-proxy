@@ -8,6 +8,7 @@ import (
 	"errors"
 	"fmt"
 	proxypb "github.com/honeycombio/libhoney-go/proto/proxypb"
+	"github.com/sirupsen/logrus"
 	"io"
 	"io/ioutil"
 	"math"
@@ -30,7 +31,6 @@ import (
 
 	"github.com/jirs5/tracing-proxy/collect"
 	"github.com/jirs5/tracing-proxy/config"
-	"github.com/jirs5/tracing-proxy/logger"
 	"github.com/jirs5/tracing-proxy/metrics"
 	"github.com/jirs5/tracing-proxy/sharder"
 	"github.com/jirs5/tracing-proxy/transmit"
@@ -52,7 +52,7 @@ const (
 
 type Router struct {
 	Config               config.Config         `inject:""`
-	Logger               logger.Logger         `inject:""`
+	Logger               *logrus.Logger        `inject:""`
 	HTTPTransport        *http.Transport       `inject:"upstreamTransport"`
 	UpstreamTransmission transmit.Transmission `inject:"upstreamTransmission"`
 	PeerTransmission     transmit.Transmission `inject:"peerTransmission"`
@@ -90,20 +90,20 @@ type BatchResponse struct {
 }
 
 type iopLogger struct {
-	logger.Logger
+	*logrus.Logger
 	incomingOrPeer string
 }
 
-func (i *iopLogger) Debug() logger.Entry {
-	return i.Logger.Debug().WithField("router_iop", i.incomingOrPeer)
+func (i *iopLogger) Debug() *logrus.Entry {
+	return i.Logger.WithField("router_iop", i.incomingOrPeer)
 }
 
-func (i *iopLogger) Info() logger.Entry {
-	return i.Logger.Info().WithField("router_iop", i.incomingOrPeer)
+func (i *iopLogger) Info() *logrus.Entry {
+	return i.Logger.WithField("router_iop", i.incomingOrPeer)
 }
 
-func (i *iopLogger) Error() logger.Entry {
-	return i.Logger.Error().WithField("router_iop", i.incomingOrPeer)
+func (i *iopLogger) Error() *logrus.Entry {
+	return i.Logger.WithField("router_iop", i.incomingOrPeer)
 }
 
 func (r *Router) SetVersion(ver string) {
@@ -133,7 +133,7 @@ func (r *Router) LnS(incomingOrPeer string) {
 	var err error
 	r.zstdDecoders, err = makeDecoders(numZstdDecoders)
 	if err != nil {
-		r.iopLogger.Error().Logf("couldn't start zstd decoders: %s", err.Error())
+		r.iopLogger.Error().Errorf("couldn't start zstd decoders: %s", err.Error())
 		return
 	}
 
@@ -179,32 +179,32 @@ func (r *Router) LnS(incomingOrPeer string) {
 	if r.incomingOrPeer == "incoming" {
 		listenAddr, err = r.Config.GetListenAddr()
 		if err != nil {
-			r.iopLogger.Error().Logf("failed to get listen addr config: %s", err)
+			r.iopLogger.Error().Errorf("failed to get listen addr config: %s", err)
 			return
 		}
 		// GRPC listen addr is optional, err means addr was not empty and invalid
 		grpcAddr, err = r.Config.GetGRPCListenAddr()
 		if err != nil {
-			r.iopLogger.Error().Logf("failed to get grpc listen addr config: %s", err)
+			r.iopLogger.Error().Errorf("failed to get grpc listen addr config: %s", err)
 			return
 		}
 	} else {
 		listenAddr, err = r.Config.GetPeerListenAddr()
 		if err != nil {
-			r.iopLogger.Error().Logf("failed to get peer listen addr config: %s", err)
+			r.iopLogger.Error().Errorf("failed to get peer listen addr config: %s", err)
 			return
 		}
 
 		// GRPC listen addr is optional, err means addr was not empty and invalid
 		grpcPeerAddr, err = r.Config.GetGRPCPeerListenAddr()
 		if err != nil {
-			r.iopLogger.Error().Logf("failed to get grpc listen addr config: %s", err)
+			r.iopLogger.Error().Errorf("failed to get grpc listen addr config: %s", err)
 			return
 		}
 
 	}
 
-	r.iopLogger.Info().Logf("Listening on %s", listenAddr)
+	r.iopLogger.Info().Infof("Listening on %s", listenAddr)
 	r.server = &http.Server{
 		Addr:    listenAddr,
 		Handler: muxxer,
@@ -213,10 +213,10 @@ func (r *Router) LnS(incomingOrPeer string) {
 	if len(grpcAddr) > 0 {
 		l, err := net.Listen("tcp", grpcAddr)
 		if err != nil {
-			r.iopLogger.Error().Logf("failed to listen to grpc addr: " + grpcAddr)
+			r.iopLogger.Error().Errorf("failed to listen to grpc addr: " + grpcAddr)
 		}
 
-		r.iopLogger.Info().Logf("gRPC listening on %s", grpcAddr)
+		r.iopLogger.Info().Infof("gRPC listening on %s", grpcAddr)
 		serverOpts := []grpc.ServerOption{
 			grpc.MaxSendMsgSize(GRPCMessageSizeMax), // default is math.MaxInt32
 			grpc.MaxRecvMsgSize(GRPCMessageSizeMax), // default is 4MB
@@ -234,10 +234,10 @@ func (r *Router) LnS(incomingOrPeer string) {
 	if len(grpcPeerAddr) > 0 {
 		l, err := net.Listen("tcp", grpcPeerAddr)
 		if err != nil {
-			r.iopLogger.Error().Logf("failed to listen to grpc peer addr: " + grpcPeerAddr)
+			r.iopLogger.Error().Errorf("failed to listen to grpc peer addr: " + grpcPeerAddr)
 		}
 
-		r.iopLogger.Info().Logf("gRPC Peer listening on %s", grpcPeerAddr)
+		r.iopLogger.Info().Infof("gRPC Peer listening on %s", grpcPeerAddr)
 		serverOpts := []grpc.ServerOption{
 			grpc.MaxSendMsgSize(GRPCMessageSizeMax), // default is math.MaxInt32
 			grpc.MaxRecvMsgSize(GRPCMessageSizeMax), // default is 4MB
@@ -258,7 +258,7 @@ func (r *Router) LnS(incomingOrPeer string) {
 
 		err = r.server.ListenAndServe()
 		if err != nil && !errors.Is(err, http.ErrServerClosed) {
-			r.iopLogger.Error().Logf("failed to ListenAndServe: %s", err)
+			r.iopLogger.Error().Errorf("failed to ListenAndServe: %s", err)
 		}
 	}()
 }
@@ -277,7 +277,7 @@ func (r *Router) Stop() error {
 }
 
 func (r *Router) alive(w http.ResponseWriter, req *http.Request) {
-	r.iopLogger.Debug().Logf("answered /x/alive check")
+	r.iopLogger.Debug().Debugf("answered /x/alive check")
 	w.Write([]byte(`{"source":"tracing-proxy","alive":"yes"}`))
 }
 
@@ -383,7 +383,7 @@ func (r *Router) batch(w http.ResponseWriter, req *http.Request) {
 	batchedEvents := make([]batchedEvent, 0)
 	err = unmarshal(req, bytes.NewReader(reqBod), &batchedEvents)
 	if err != nil {
-		debugLog.WithField("error", err.Error()).WithField("request.url", req.URL).WithField("json_body", string(reqBod)).Logf("error parsing json")
+		debugLog.WithField("error", err.Error()).WithField("request.url", req.URL).WithField("json_body", string(reqBod)).Debugf("error parsing json")
 		r.handlerReturnWithError(w, ErrJSONFailed, err)
 		return
 	}
@@ -399,7 +399,7 @@ func (r *Router) batch(w http.ResponseWriter, req *http.Request) {
 					Error:  fmt.Sprintf("failed to convert to event: %s", err.Error()),
 				},
 			)
-			debugLog.WithField("error", err).Logf("event from batch failed to process event")
+			debugLog.WithField("error", err).Debugf("event from batch failed to process event")
 			continue
 		}
 
@@ -429,8 +429,8 @@ func (r *Router) batch(w http.ResponseWriter, req *http.Request) {
 func (r *Router) processEvent(ev *types.Event, reqID interface{}) error {
 	debugLog := r.iopLogger.Debug().
 		WithField("request_id", reqID).
-		WithString("api_host", ev.APIHost).
-		WithString("dataset", ev.Dataset)
+		WithField("api_host", ev.APIHost).
+		WithField("dataset", ev.Dataset)
 
 	// extract trace ID, route to self or peer, pass on to collector
 	// TODO make trace ID field configurable
@@ -443,20 +443,20 @@ func (r *Router) processEvent(ev *types.Event, reqID interface{}) error {
 	if traceID == "" {
 		// not part of a trace. send along upstream
 		r.Metrics.Increment(r.incomingOrPeer + "_router_nonspan")
-		debugLog.WithString("api_host", ev.APIHost).
-			WithString("dataset", ev.Dataset).
-			Logf("sending non-trace event from batch")
+		debugLog.WithField("api_host", ev.APIHost).
+			WithField("dataset", ev.Dataset).
+			Debugf("sending non-trace event from batch")
 		r.UpstreamTransmission.EnqueueEvent(ev)
 		return nil
 	}
-	debugLog = debugLog.WithString("trace_id", traceID)
+	debugLog = debugLog.WithField("trace_id", traceID)
 
 	// ok, we're a span. Figure out if we should handle locally or pass on to a peer
 	targetShard := r.Sharder.WhichShard(traceID)
 	if r.incomingOrPeer == "incoming" && !targetShard.Equals(r.Sharder.MyShard()) {
 		r.Metrics.Increment(r.incomingOrPeer + "_router_peer")
-		debugLog.WithString("peer", targetShard.GetAddress()).
-			Logf("Sending span from batch to my peer")
+		debugLog.WithField("peer", targetShard.GetAddress()).
+			Debugf("Sending span from batch to my peer")
 		ev.APIHost = targetShard.GetAddress()
 
 		// Unfortunately this doesn't tell us if the event was actually
@@ -479,12 +479,12 @@ func (r *Router) processEvent(ev *types.Event, reqID interface{}) error {
 	}
 	if err != nil {
 		r.Metrics.Increment(r.incomingOrPeer + "_router_dropped")
-		debugLog.Logf("Dropping span from batch, channel full")
+		debugLog.Debugf("Dropping span from batch, channel full")
 		return err
 	}
 
 	r.Metrics.Increment(r.incomingOrPeer + "_router_span")
-	debugLog.Logf("Accepting span from batch for collection into a trace")
+	debugLog.Debugf("Accepting span from batch for collection into a trace")
 	return nil
 }
 

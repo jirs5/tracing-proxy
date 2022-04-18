@@ -75,7 +75,7 @@ func processTraceRequest(
 	var requestID types.RequestIDContextKey
 	apiHost, err := router.Config.GetOpsRampAPI()
 	if err != nil {
-		router.Logger.Error().Logf("Unable to retrieve APIHost from config while processing OTLP batch")
+		router.Logger.Errorf("Unable to retrieve APIHost from config while processing OTLP batch")
 		return err
 	}
 
@@ -93,7 +93,7 @@ func processTraceRequest(
 				Data:        ev.Attributes,
 			}
 			if err = router.processEvent(event, requestID); err != nil {
-				router.Logger.Error().Logf("Error processing event: " + err.Error())
+				router.Logger.Errorf("Error processing event: " + err.Error())
 			}
 		}
 	}
@@ -108,7 +108,7 @@ func (r *Router) ExportTraceProxy(ctx context.Context, in *proxypb.ExportTracePr
 	var token, tenantId, datasetName string
 	apiHost, err := r.Config.GetOpsRampAPI()
 	if err != nil {
-		r.Logger.Error().Logf("Unable to retrieve APIHost from config while processing OTLP batch")
+		r.Logger.Errorf("Unable to retrieve APIHost from config while processing OTLP batch")
 		return &proxypb.ExportTraceProxyServiceResponse{Message: "Failed to get apihost", Status: "Failed"}, nil
 	}
 	md, ok := metadata.FromIncomingContext(ctx)
@@ -153,7 +153,7 @@ func (r *Router) ExportTraceProxy(ctx context.Context, in *proxypb.ExportTracePr
 			Data:        data,
 		}
 		if err = r.processEvent(event, requestID); err != nil {
-			r.Logger.Error().Logf("Error processing event: " + err.Error())
+			r.Logger.Errorf("Error processing event: " + err.Error())
 		}
 	}
 	return &proxypb.ExportTraceProxyServiceResponse{Message: "Received Successfully by peer", Status: "Success"}, nil

@@ -1,19 +1,19 @@
 package sample
 
 import (
+	"github.com/sirupsen/logrus"
 	"math/rand"
 
 	dynsampler "github.com/honeycombio/dynsampler-go"
 
 	"github.com/jirs5/tracing-proxy/config"
-	"github.com/jirs5/tracing-proxy/logger"
 	"github.com/jirs5/tracing-proxy/metrics"
 	"github.com/jirs5/tracing-proxy/types"
 )
 
 type TotalThroughputSampler struct {
 	Config  *config.TotalThroughputSamplerConfig
-	Logger  logger.Logger
+	Logger  *logrus.Logger
 	Metrics metrics.Metrics
 
 	goalThroughputPerSec int64
@@ -25,10 +25,10 @@ type TotalThroughputSampler struct {
 }
 
 func (d *TotalThroughputSampler) Start() error {
-	d.Logger.Debug().Logf("Starting TotalThroughputSampler")
-	defer func() { d.Logger.Debug().Logf("Finished starting TotalThroughputSampler") }()
+	d.Logger.Debugf("Starting TotalThroughputSampler")
+	defer func() { d.Logger.Debugf("Finished starting TotalThroughputSampler") }()
 	if d.Config.GoalThroughputPerSec < 1 {
-		d.Logger.Debug().Logf("configured sample rate for dynamic sampler was %d; forcing to 100", d.Config.GoalThroughputPerSec)
+		d.Logger.Debugf("configured sample rate for dynamic sampler was %d; forcing to 100", d.Config.GoalThroughputPerSec)
 		d.Config.GoalThroughputPerSec = 100
 	}
 	d.goalThroughputPerSec = d.Config.GoalThroughputPerSec
@@ -60,12 +60,12 @@ func (d *TotalThroughputSampler) GetSampleRate(trace *types.Trace) (uint, bool) 
 		rate = 1
 	}
 	shouldKeep := rand.Intn(int(rate)) == 0
-	d.Logger.Debug().WithFields(map[string]interface{}{
+	d.Logger.WithFields(map[string]interface{}{
 		"sample_key":  key,
 		"sample_rate": rate,
 		"sample_keep": shouldKeep,
 		"trace_id":    trace.TraceID,
-	}).Logf("got sample rate and decision")
+	}).Logf(logrus.DebugLevel, "got sample rate and decision")
 	if shouldKeep {
 		d.Metrics.Increment("dynsampler_num_kept")
 	} else {

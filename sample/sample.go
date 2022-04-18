@@ -1,10 +1,10 @@
 package sample
 
 import (
+	"github.com/sirupsen/logrus"
 	"os"
 
 	"github.com/jirs5/tracing-proxy/config"
-	"github.com/jirs5/tracing-proxy/logger"
 	"github.com/jirs5/tracing-proxy/metrics"
 	"github.com/jirs5/tracing-proxy/types"
 )
@@ -17,7 +17,7 @@ type Sampler interface {
 // SamplerFactory is used to create new samplers with common (injected) resources
 type SamplerFactory struct {
 	Config  config.Config   `inject:""`
-	Logger  logger.Logger   `inject:""`
+	Logger  *logrus.Logger  `inject:""`
 	Metrics metrics.Metrics `inject:"metrics"`
 }
 
@@ -43,17 +43,17 @@ func (s *SamplerFactory) GetSamplerImplementationForDataset(dataset string) Samp
 	case *config.TotalThroughputSamplerConfig:
 		sampler = &TotalThroughputSampler{Config: c, Logger: s.Logger, Metrics: s.Metrics}
 	default:
-		s.Logger.Error().Logf("unknown sampler type %T. Exiting.", c)
+		s.Logger.Errorf("unknown sampler type %T. Exiting.", c)
 		os.Exit(1)
 	}
 
 	err = sampler.Start()
 	if err != nil {
-		s.Logger.Debug().WithField("dataset", dataset).Logf("failed to start sampler")
+		s.Logger.WithField("dataset", dataset).Logf(logrus.DebugLevel, "failed to start sampler")
 		return nil
 	}
 
-	s.Logger.Debug().WithField("dataset", dataset).Logf("created implementation for sampler type %T", c)
+	s.Logger.WithField("dataset", dataset).Logf(logrus.DebugLevel, "created implementation for sampler type %T", c)
 
 	return sampler
 }

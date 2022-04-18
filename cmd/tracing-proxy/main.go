@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"github.com/sirupsen/logrus"
 	"net"
 	"net/http"
 	"os"
@@ -75,7 +76,7 @@ func main() {
 
 	c, err := config.NewConfig(opts.ConfigFile, opts.RulesFile, func(err error) {
 		if a.Logger != nil {
-			a.Logger.Error().WithField("error", err).Logf("error reloading config")
+			a.Logger.WithField("error", err).Logf(logrus.ErrorLevel, "error reloading config")
 		}
 	})
 	if err != nil {
@@ -91,23 +92,15 @@ func main() {
 	}
 
 	// get desired implementation for each dependency to inject
-	lgr := logger.GetLoggerImplementation()
+	logrusLogger, err := logger.GetLoggerImplementation(c)
+	if err != nil {
+		fmt.Printf("log config failed: %+v\n", err)
+		os.Exit(1)
+	}
 	collector := collect.GetCollectorImplementation(c)
 	metricsConfig := metrics.GetMetricsImplementation("")
 	shrdr := sharder.GetSharderImplementation(c)
 	samplerFactory := &sample.SamplerFactory{}
-
-	// set log level
-	logLevel, err := c.GetLoggingLevel()
-	if err != nil {
-		fmt.Printf("unable to get logging level from config: %v\n", err)
-		os.Exit(1)
-	}
-	logrusLogger := lgr.Init()
-	if err := lgr.SetLevel(logLevel); err != nil {
-		fmt.Printf("unable to set logging level: %v\n", err)
-		os.Exit(1)
-	}
 
 	// upstreamTransport is the http transport used to send things on to OpsRamp
 	upstreamTransport := &http.Transport{
@@ -175,7 +168,7 @@ func main() {
 	err = g.Provide(
 		&inject.Object{Value: c},
 		&inject.Object{Value: peers},
-		&inject.Object{Value: lgr},
+		&inject.Object{Value: logrusLogger},
 		&inject.Object{Value: upstreamTransport, Name: "upstreamTransport"},
 		&inject.Object{Value: peerTransport, Name: "peerTransport"},
 		&inject.Object{Value: &transmit.DefaultTransmission{LibhClient: upstreamClient, Name: "upstream_"}, Name: "upstreamTransmission"},
@@ -219,5 +212,5 @@ func main() {
 
 	// block on our signal handler to exit
 	sig := <-sigsToExit
-	a.Logger.Error().Logf("Caught signal \"%s\"", sig)
+	a.Logger.Logf(logrus.ErrorLevel, "Caught signal \"%s\"", sig)
 }

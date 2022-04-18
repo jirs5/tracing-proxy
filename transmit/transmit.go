@@ -2,6 +2,7 @@ package transmit
 
 import (
 	"context"
+	"github.com/sirupsen/logrus"
 	"os"
 	"sync"
 
@@ -9,7 +10,6 @@ import (
 	"github.com/honeycombio/libhoney-go/transmission"
 
 	"github.com/jirs5/tracing-proxy/config"
-	"github.com/jirs5/tracing-proxy/logger"
 	"github.com/jirs5/tracing-proxy/metrics"
 	"github.com/jirs5/tracing-proxy/types"
 )
@@ -30,7 +30,7 @@ const (
 
 type DefaultTransmission struct {
 	Config     config.Config   `inject:""`
-	Logger     logger.Logger   `inject:""`
+	Logger     *logrus.Logger  `inject:""`
 	Metrics    metrics.Metrics `inject:"metrics"`
 	Version    string          `inject:"version"`
 	LibhClient *libtrace.Client
@@ -45,8 +45,8 @@ type DefaultTransmission struct {
 var once sync.Once
 
 func (d *DefaultTransmission) Start() error {
-	d.Logger.Debug().Logf("Starting DefaultTransmission: %s type", d.Name)
-	defer func() { d.Logger.Debug().Logf("Finished starting DefaultTransmission: %s type", d.Name) }()
+	d.Logger.Debugf("Starting DefaultTransmission: %s type", d.Name)
+	defer func() { d.Logger.Debugf("Finished starting DefaultTransmission: %s type", d.Name) }()
 
 	// upstreamAPI doesn't get set when the client is initialized, because
 	// it can be reloaded from the config file while live
@@ -83,22 +83,22 @@ func (d *DefaultTransmission) Start() error {
 }
 
 func (d *DefaultTransmission) reloadTransmissionBuilder() {
-	d.Logger.Debug().Logf("reloading transmission config")
+	d.Logger.Debugf("reloading transmission config")
 	upstreamAPI, err := d.Config.GetOpsRampAPI()
 	if err != nil {
 		// log and skip reload
-		d.Logger.Error().Logf("Failed to reload OpsRamp API when reloading configs:", err)
+		d.Logger.Errorf("Failed to reload OpsRamp API when reloading configs:", err)
 	}
 	builder := d.LibhClient.NewBuilder()
 	builder.APIHost = upstreamAPI
 }
 
 func (d *DefaultTransmission) EnqueueEvent(ev *types.Event) {
-	d.Logger.Debug().
+	d.Logger.
 		WithField("request_id", ev.Context.Value(types.RequestIDContextKey{})).
-		WithString("api_host", ev.APIHost).
-		WithString("dataset", ev.Dataset).
-		Logf("transmit sending event")
+		WithField("api_host", ev.APIHost).
+		WithField("dataset", ev.Dataset).
+		Debugf("transmit sending event")
 	libhEv := d.builder.NewEvent()
 	libhEv.APIHost = ev.APIHost
 	libhEv.WriteKey = ev.APIKey
@@ -115,12 +115,12 @@ func (d *DefaultTransmission) EnqueueEvent(ev *types.Event) {
 	err := libhEv.SendPresampled()
 	if err != nil {
 		d.Metrics.Increment(d.Name + counterEnqueueErrors)
-		d.Logger.Error().
-			WithString("error", err.Error()).
+		d.Logger.
+			WithField("error", err.Error()).
 			WithField("request_id", ev.Context.Value(types.RequestIDContextKey{})).
-			WithString("dataset", ev.Dataset).
-			WithString("api_host", ev.APIHost).
-			Logf("failed to enqueue event")
+			WithField("dataset", ev.Dataset).
+			WithField("api_host", ev.APIHost).
+			Errorf("failed to enqueue event")
 	}
 }
 
@@ -158,7 +158,7 @@ func (d *DefaultTransmission) processResponses(
 					evType = metadata["type"]
 					target = metadata["target"]
 				}
-				log := d.Logger.Error().WithFields(map[string]interface{}{
+				log := d.Logger.WithFields(map[string]interface{}{
 					"status_code": r.StatusCode,
 					"api_host":    apiHost,
 					"dataset":     dataset,
@@ -168,7 +168,7 @@ func (d *DefaultTransmission) processResponses(
 				if r.Err != nil {
 					log = log.WithField("error", r.Err.Error())
 				}
-				log.Logf("error when sending event")
+				log.Errorf("error when sending event")
 				d.Metrics.Increment(d.Name + counterResponseErrors)
 			} else {
 				d.Metrics.Increment(d.Name + counterResponse20x)

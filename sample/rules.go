@@ -1,25 +1,25 @@
 package sample
 
 import (
+	"github.com/sirupsen/logrus"
 	"math/rand"
 	"strings"
 
 	"github.com/jirs5/tracing-proxy/config"
-	"github.com/jirs5/tracing-proxy/logger"
 	"github.com/jirs5/tracing-proxy/metrics"
 	"github.com/jirs5/tracing-proxy/types"
 )
 
 type RulesBasedSampler struct {
 	Config   *config.RulesBasedSamplerConfig
-	Logger   logger.Logger
+	Logger   *logrus.Logger
 	Metrics  metrics.Metrics
 	samplers map[string]Sampler
 }
 
 func (s *RulesBasedSampler) Start() error {
-	s.Logger.Debug().Logf("Starting RulesBasedSampler")
-	defer func() { s.Logger.Debug().Logf("Finished starting RulesBasedSampler") }()
+	s.Logger.Debugf("Starting RulesBasedSampler")
+	defer func() { s.Logger.Debugf("Finished starting RulesBasedSampler") }()
 
 	s.Metrics.Register("rulessampler_num_dropped", "counter")
 	s.Metrics.Register("rulessampler_num_kept", "counter")
@@ -38,17 +38,17 @@ func (s *RulesBasedSampler) Start() error {
 			} else if rule.Sampler.TotalThroughputSampler != nil {
 				sampler = &TotalThroughputSampler{Config: rule.Sampler.TotalThroughputSampler, Logger: s.Logger, Metrics: s.Metrics}
 			} else {
-				s.Logger.Debug().WithFields(map[string]interface{}{
+				s.Logger.WithFields(map[string]interface{}{
 					"rule_name": rule.Name,
-				}).Logf("invalid or missing downstream sampler")
+				}).Logf(logrus.DebugLevel, "invalid or missing downstream sampler")
 				continue
 			}
 
 			err := sampler.Start()
 			if err != nil {
-				s.Logger.Debug().WithFields(map[string]interface{}{
+				s.Logger.WithFields(map[string]interface{}{
 					"rule_name": rule.Name,
-				}).Logf("error creating downstream sampler: %s", err)
+				}).Logf(logrus.DebugLevel, "error creating downstream sampler: %s", err)
 				continue
 			}
 			s.samplers[rule.String()] = sampler
@@ -58,7 +58,7 @@ func (s *RulesBasedSampler) Start() error {
 }
 
 func (s *RulesBasedSampler) GetSampleRate(trace *types.Trace) (rate uint, keep bool) {
-	logger := s.Logger.Debug().WithFields(map[string]interface{}{
+	logger := s.Logger.WithFields(map[string]interface{}{
 		"trace_id": trace.TraceID,
 	})
 
@@ -73,7 +73,7 @@ func (s *RulesBasedSampler) GetSampleRate(trace *types.Trace) (rate uint, keep b
 				var exists bool
 
 				attributeMapKeys := []string{"spanAttributes", "resourceAttributes", "eventAttributes"}
-				
+
 				for _, attributeKey := range attributeMapKeys {
 					if attribute, ok := span.Data[attributeKey]; ok && attribute != nil {
 						value, exists = attribute.(map[string]interface{})[condition.Field]
@@ -165,7 +165,7 @@ func (s *RulesBasedSampler) GetSampleRate(trace *types.Trace) (rate uint, keep b
 				if sampler, found = s.samplers[rule.String()]; !found {
 					logger.WithFields(map[string]interface{}{
 						"rule_name": rule.Name,
-					}).Logf("could not find downstream sampler for rule: %s", rule.Name)
+					}).Logf(logrus.DebugLevel, "could not find downstream sampler for rule: %s", rule.Name)
 					return 1, true
 				}
 				rate, keep = sampler.GetSampleRate(trace)
@@ -184,7 +184,7 @@ func (s *RulesBasedSampler) GetSampleRate(trace *types.Trace) (rate uint, keep b
 				"rate":      rate,
 				"keep":      keep,
 				"drop_rule": rule.Drop,
-			}).Logf("got sample rate and decision")
+			}).Logf(logrus.DebugLevel, "got sample rate and decision")
 			return rate, keep
 		}
 	}

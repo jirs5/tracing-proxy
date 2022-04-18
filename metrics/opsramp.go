@@ -8,6 +8,7 @@ import (
 	io_prometheus_client "github.com/prometheus/client_model/go"
 	"github.com/prometheus/common/model"
 	"github.com/prometheus/prometheus/prompb"
+	"github.com/sirupsen/logrus"
 	"io/ioutil"
 	"net/http"
 	"net/url"
@@ -19,15 +20,14 @@ import (
 	"github.com/gogo/protobuf/proto"
 	"github.com/gorilla/mux"
 	"github.com/jirs5/tracing-proxy/config"
-	"github.com/jirs5/tracing-proxy/logger"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
 type OpsRampMetrics struct {
-	Config config.Config `inject:""`
-	Logger logger.Logger `inject:""`
+	Config config.Config  `inject:""`
+	Logger *logrus.Logger `inject:""`
 	// metrics keeps a record of all the registered metrics so we can increment
 	// them by name
 	metrics map[string]interface{}
@@ -46,8 +46,8 @@ type OpsRampMetrics struct {
 }
 
 func (p *OpsRampMetrics) Start() error {
-	p.Logger.Debug().Logf("Starting OpsRampMetrics")
-	defer func() { p.Logger.Debug().Logf("Finished starting OpsRampMetrics") }()
+	p.Logger.Debugf("Starting OpsRampMetrics")
+	defer func() { p.Logger.Debugf("Finished starting OpsRampMetrics") }()
 
 	metricsConfig, err := p.Config.GetOpsRampMetricsConfig()
 	if err != nil {
@@ -63,13 +63,13 @@ func (p *OpsRampMetrics) Start() error {
 			// populating the oAuth Token Initially
 			err := p.RenewOpsRampOAuthToken()
 			if err != nil {
-				p.Logger.Error().Logf("error while initializing oAuth Token Err: %v", err)
+				p.Logger.Errorf("error while initializing oAuth Token Err: %v", err)
 			}
 
 			for _ = range metricsTicker.C {
 				statusCode, err := p.PushMetricsToOpsRamp()
 				if err != nil {
-					p.Logger.Error().Logf("error while pushing metrics with statusCode: %d and Error: %v", statusCode, err)
+					p.Logger.Errorf("error while pushing metrics with statusCode: %d and Error: %v", statusCode, err)
 				}
 			}
 		}()
@@ -261,7 +261,7 @@ func (p *OpsRampMetrics) PopulateOpsRampMetrics(metricsConfig *config.OpsRampMet
 		proxyUrl = fmt.Sprintf("%s://%s:%d/", metricsConfig.ProxyProtocol, metricsConfig.ProxyServer, metricsConfig.ProxyPort)
 		if metricsConfig.ProxyUserName != "" && metricsConfig.ProxyPassword != "" {
 			proxyUrl = fmt.Sprintf("%s://%s:%s@%s:%d", metricsConfig.ProxyProtocol, metricsConfig.ProxyUserName, metricsConfig.ProxyPassword, metricsConfig.ProxyServer, metricsConfig.ProxyPort)
-			p.Logger.Debug().Logf("Using Authentication for Proxy Communication for Metrics")
+			p.Logger.Debugf("Using Authentication for Proxy Communication for Metrics")
 		}
 	}
 
@@ -272,7 +272,7 @@ func (p *OpsRampMetrics) PopulateOpsRampMetrics(metricsConfig *config.OpsRampMet
 	if proxyUrl != "" {
 		proxyURL, err := url.Parse(proxyUrl)
 		if err != nil {
-			p.Logger.Error().Logf("skipping proxy err: %v", err)
+			p.Logger.Errorf("skipping proxy err: %v", err)
 		} else {
 			p.Client = http.Client{
 				Transport: &http.Transport{Proxy: http.ProxyURL(proxyURL)},
@@ -465,12 +465,12 @@ func (p *OpsRampMetrics) PushMetricsToOpsRamp() (int, error) {
 	// Depending on version and configuration of the PGW, StatusOK or StatusAccepted may be returned.
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		p.Logger.Error().Logf("failed to parse response body Err: %v", err)
+		p.Logger.Errorf("failed to parse response body Err: %v", err)
 	}
 	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusAccepted {
 		return resp.StatusCode, fmt.Errorf("unexpected status code %d while pushing: %s", resp.StatusCode, body)
 	}
-	p.Logger.Debug().Logf("metrics push response: %v", string(body))
+	p.Logger.Debugf("metrics push response: %v", string(body))
 
 	return resp.StatusCode, nil
 }

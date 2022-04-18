@@ -13,12 +13,12 @@ import (
 // (eg team api key verification, markers, etc.)
 func (r *Router) proxy(w http.ResponseWriter, req *http.Request) {
 	r.Metrics.Increment(r.incomingOrPeer + "_router_proxied")
-	r.Logger.Debug().Logf("proxying request for %s", req.URL.Path)
+	r.Logger.Debugf("proxying request for %s", req.URL.Path)
 	upstreamTarget, err := r.Config.GetOpsRampAPI()
 	if err != nil {
 		w.WriteHeader(http.StatusServiceUnavailable)
 		io.WriteString(w, `{"error":"upstream target unavailable"}`)
-		r.Logger.Error().Logf("error getting OpsRamp API config: %s", err)
+		r.Logger.Errorf("error getting OpsRamp API config: %s", err)
 		return
 	}
 	forwarded := req.Header.Get("X-Forwarded-For")

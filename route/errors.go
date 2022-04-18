@@ -55,7 +55,7 @@ func (r *Router) handlerReturnWithError(w http.ResponseWriter, he handlerError, 
 		fields["error.stack_trace"] = string(debug.Stack())
 	}
 
-	r.Logger.Error().WithFields(fields).Logf("handler returning error")
+	r.Logger.WithFields(fields).Errorf("handler returning error")
 
 	w.WriteHeader(he.status)
 

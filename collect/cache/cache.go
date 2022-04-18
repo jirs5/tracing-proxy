@@ -1,9 +1,9 @@
 package cache
 
 import (
+	"github.com/sirupsen/logrus"
 	"time"
 
-	"github.com/jirs5/tracing-proxy/logger"
 	"github.com/jirs5/tracing-proxy/metrics"
 	"github.com/jirs5/tracing-proxy/types"
 )
@@ -28,7 +28,7 @@ type Cache interface {
 // longest trace.
 type DefaultInMemCache struct {
 	Metrics metrics.Metrics
-	Logger  logger.Logger
+	Logger  *logrus.Logger
 
 	cache map[string]*types.Trace
 
@@ -43,10 +43,10 @@ const DefaultInMemCacheCapacity = 10000
 func NewInMemCache(
 	capacity int,
 	metrics metrics.Metrics,
-	logger logger.Logger,
+	logger *logrus.Logger,
 ) *DefaultInMemCache {
-	logger.Debug().Logf("Starting DefaultInMemCache")
-	defer func() { logger.Debug().Logf("Finished starting DefaultInMemCache") }()
+	logger.Debugf("Starting DefaultInMemCache")
+	defer func() { logger.Debugf("Finished starting DefaultInMemCache") }()
 
 	// buffer_overrun increments when the trace overwritten in the circular
 	// buffer has not yet been sent
