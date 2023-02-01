@@ -34,7 +34,7 @@ require (
 	github.com/stretchr/testify v1.7.0
 	github.com/vmihailenco/msgpack/v4 v4.3.11
 	go.opentelemetry.io/proto/otlp v0.9.0
-	google.golang.org/grpc v1.50.1
+	google.golang.org/grpc v1.52.3
 	gopkg.in/alexcesaro/statsd.v2 v2.0.0
 	gopkg.in/go-playground/assert.v1 v1.2.1 // indirect
 	gopkg.in/natefinch/lumberjack.v2 v2.0.0
