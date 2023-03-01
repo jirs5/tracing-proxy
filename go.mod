@@ -31,10 +31,10 @@ require (
 	github.com/rcrowley/go-metrics v0.0.0-20200313005456-10cdbea86bc0
 	github.com/sirupsen/logrus v1.8.1
 	github.com/spf13/viper v1.10.1
-	github.com/stretchr/testify v1.7.0
+	github.com/stretchr/testify v1.8.1
 	github.com/vmihailenco/msgpack/v4 v4.3.11
-	go.opentelemetry.io/proto/otlp v0.9.0
-	google.golang.org/grpc v1.50.1
+	go.opentelemetry.io/proto/otlp v0.15.0
+	google.golang.org/grpc v1.53.0
 	gopkg.in/alexcesaro/statsd.v2 v2.0.0
 	gopkg.in/go-playground/assert.v1 v1.2.1 // indirect
 	gopkg.in/natefinch/lumberjack.v2 v2.0.0
